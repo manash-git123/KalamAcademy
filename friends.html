@@ -1,0 +1,196 @@
+<html>
+    <head>
+        <title>
+            Kalam Academy
+        </title>
+        <link href="./bootstrap/css/bootstrap.min.css" rel="stylesheet">
+        <script src="./jquery/jquery.min.js";></script>
+        <script>
+            // Check Login
+            var username = localStorage.getItem('username');
+            if(username == null){
+                alert("Not logged in");
+                window.location.href = './index.html';
+            }
+            // Logout
+            function logout(){
+                localStorage.removeItem('username');
+                localStorage.removeItem('recieved');
+                localStorage.removeItem('allFriends');
+                localStorage.removeItem('alreadySent');
+                window.location.href = './index.html';
+            }
+
+            function addFriend(Receiver){
+                $.post(
+                    "Friends.php",
+                    {operation: "sendRequest",from:username,to:Receiver},
+                    function (response){
+                        window.location.href = './friends.html';
+                    }
+                )
+            }
+
+
+            // Friend Request Recieved
+            $.post(
+                "Friends.php",
+                {operation: "recievedRequests",username : username},
+                function (response){
+                    var recieved = response.split(",");
+                    var recievedAll = "";
+                    localStorage.setItem("recieved" , JSON.stringify(recieved));
+                    // alert(recieved);
+                    for (index = 0; index < recieved.length; index++) { 
+                        recievedAll = recievedAll + '<p>'+recieved[index]+'<button class="btn btn-success ml-5" onclick=acceptRequest("'+recieved[index]+'")>Yes</button><button class="btn btn-danger ml-5" onclick=deleteRequest("'+recieved[index]+'")>No</button></p>';
+                    }
+                    if(recieved!= "")
+                        document.getElementById("friendRequests").innerHTML = recievedAll;
+                }
+            )
+            //Recieved Requests Fetched-----------------        
+            
+
+            // Accept Friend Request
+            function acceptRequest(from){
+                $.ajax({
+                    type: 'POST',
+                    url: "Friends.php",
+                    data: {operation: "acceptRequest",from: from,to: username},
+                    success: function (response){
+                        window.location.href = "./friends.html";
+                    }
+                });
+            }
+            // Friend Request Accepted---------------
+
+
+            function deleteRequest(from){
+                $.ajax({
+                    type: 'POST',
+                    url: "Friends.php",
+                    data: {operation: "deleteRequest",from: from,to: username},
+                    success: function (response){
+                        window.location.href = "./friends.html";
+                    }
+                });
+            } 
+
+
+
+            // List Friends Only
+            $.ajax({
+                type: 'POST',
+                url: "Friends.php",
+                data: {operation:"listFriends",username: username},
+                success: function (response){
+                    var allFriends = response.split(",");
+                    var content = "";
+                    localStorage.setItem("allFriends" , JSON.stringify(allFriends));
+                    for (index = 0; index < allFriends.length; index++) { 
+                        if(allFriends[index]!= "")
+                            content = content + "<p><button class='btn btn-link' onclick=visitProfile('"+allFriends[index]+"')>"+allFriends[index]+"</button></p>";
+                    }
+                    document.getElementById("friends").innerHTML = content;
+                }
+            });
+            // Only Friends Listed
+
+            // Get All Users
+            $.post(
+                "Friends.php",
+                {operation : "getUsers"},
+                function (response){
+                    var allUser = response.split(",");
+                    var content = "";
+                    for (index = 0; index < allUser.length; index++) { 
+                        console.log(allUser[index]);
+                        
+
+                        //Check for already Sent
+                       
+                        $.ajax({
+                            url: "Friends.php",
+                            data: {operation : "checkSent", to : allUser[index] ,from : username},
+                            success: function(response){
+                                 localStorage.setItem('alreadySent',response);
+                            },
+                            async:false
+                        });
+                        
+                        // Checks for Req Already Recieved
+                        var recievedAlready = 0;
+                        var req = JSON.parse(localStorage.getItem("recieved"));
+                        for (let i = 0; i < req.length; i++) {
+                            if(allUser[index]==req[i])
+                                recievedAlready = 1;
+                        }
+
+                        // Checks for Friends
+                        var friendsAlready = 0;
+                        var frnd = JSON.parse(localStorage.getItem("allFriends"));
+                        for (let i = 0; i < frnd.length; i++) {
+                            if(allUser[index]==frnd[i])
+                                recievedAlready = 1;
+                        }
+                        
+                        if(allUser[index]!=username && recievedAlready!=1 && friendsAlready!=1){
+                            if(localStorage.getItem('alreadySent')!=1){
+                                var button = '<button class = "btn btn-success ml-5" onclick=addFriend("'+allUser[index]+'")><h5>+</h5></button></p>';
+                            }else{
+                                var button = '<i class="ml-5" >Friend Request sent</i>';
+                            }
+                            content = content + '<p id='+index+'>'+allUser[index]+button;
+                        }
+                    }  
+                    document.getElementById("allUsers").innerHTML = content;
+                }
+            )
+            // All Users Fetched-------------------
+
+            // Visit Profile
+            function visitProfile(userHandle){
+                localStorage.setItem("userHandle",userHandle);
+                window.location.href = "./profile.html";
+            }            
+            
+        </script>
+    </head>
+    <body>
+        <header>
+            <nav class="navbar navbar-dark bg-dark" style="color: white;">
+                    
+                <a class="navbar-brand" href="./home.html"  ><h1><i><script>document.write(username);</script></i></h1></a>
+                <div>    
+                    <a class="btn btn-success mr-5" href="./friends.html">Friends</a>
+                    <button class="btn btn-danger mr-3" href="" onclick="logout()">Log Out</button>
+                </div>
+            </nav>
+        </header>
+        <main>
+            <div class="container mt-5">
+                <div class="row mt-5">
+                    <div class="col-md-4">
+                        <h3>Friend Requests</h3>
+                        <hr>
+                        <p id="friendRequests">
+                        </p>
+                    </div>
+                    <div class="col-md-4">
+                        <h3>Friends</h3>
+                        <hr>
+                        <p id="friends">
+                        </p>
+                    </div>
+                    <div class="col-md-4 align-center">
+                        <h3>All Users</h3>
+                        <hr>
+                        <p id="allUsers">
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+    </body>
+</html>

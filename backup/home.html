@@ -1,0 +1,126 @@
+<html>
+    <head>
+        <title>
+            Kalam Academy
+        </title>
+        <link href="./bootstrap/css/bootstrap.min.css" rel="stylesheet">
+        <script src="./jquery/jquery.min.js";></script>
+        <script>
+            var username = localStorage.getItem('username');
+            if(username == null){
+                alert("Not logged in");
+                window.location.href = './index.html';
+            }
+// Logout Function
+            function logout(){
+                localStorage.removeItem('username');
+                localStorage.removeItem('recieved');
+                localStorage.removeItem('allFriends');
+                localStorage.removeItem('alreadySent');
+                window.location.href = './index.html';
+            }
+
+// Fuction to Load all the Updates
+            getUpdates();
+           function getUpdates(page){
+
+            $.ajax({
+                type: 'POST',
+                url: "Friends.php",
+                data: {operation:"listFriends",username: username},
+                success: function (response){
+                    var allFriends = response.split(",");
+                    localStorage.setItem("allFriends" , JSON.stringify(allFriends));
+                    // alert(response);    
+                }
+            });
+
+            var friendList= JSON.parse(localStorage.getItem("allFriends"));
+            // console.log(friendList);
+            $.ajax({
+                type:"POST",
+                url:"Home.php",
+                data:{operation: "getUpdates",page:page,username: username,friendList:friendList},
+                success: function (response){
+                    console.log(response);
+                    var str = response.split("<b>");
+                    if(str[1]){
+                        var str1 = str[1].split("</b>");
+                        if(str1[0]=="Warning"){
+                        window.location.href="./home.html";
+                    }
+                    }
+                    
+                    document.getElementById("displayUpdates").innerHTML = response;
+                }
+            });
+           }
+// All Updates Loaded---------->
+
+// Function to send Updates
+            function sendUpdate(){
+                var message = document.getElementById("update").value;
+                if(message.length > 10){
+                    $.ajax({
+                    type: 'POST',
+                    url:"Home.php",
+                    data: {operation: "sendUpdate",message: message,author:username},
+                    success: function (response){
+                                if(response){
+                                    alert("Update Posted");
+                                }else{
+                                    alert("Server Error");
+                                }
+                                document.getElementById("warn_message").innerHTML = "";
+                                window.location.href= "./home.html";
+                            }
+
+                    });
+                }else{
+                    document.getElementById("warn_message").innerHTML = "The message should contain more than 10 characters";
+                }
+            }
+
+            // Updates Sent---------------------
+
+
+        </script>
+    </head>
+    <body>
+        <header>
+            <nav class="navbar navbar-dark bg-dark" style="color: white;">
+                    
+                <a class="navbar-brand" href=""  ><h1><i><script>document.write(username);</script></i></h1></a>
+                <div>    
+                    <a class="btn btn-success mr-5" href="./friends.html">Friends</a>
+                    <button class="btn btn-danger mr-3" href="" onclick="logout()">Log Out</button>
+                </div>
+            </nav>
+        </header>
+
+        <main>
+            <div class="container">
+                <div class="row mt-5">
+                    
+                    <div class="col-xl-8">
+                        <h3>Updates</h3>
+                        <h5>Displaying most recent 20 updates</h5>
+                        <div class="container" id="displayUpdates">
+
+                        </div>
+                    </div>
+
+                    <div class="col-xl-4">
+                        <form class="form">
+                            <label for="update">Post a new Update</label><br>
+                            <textarea id="update" class="form-data" rows="5" placeholder="Type your update here" style="width: 100%;background-color: #8080803d;"></textarea>
+                            <span style="color: red; font-size: x-small;" id="warn_message"></span>
+                        </form>
+                        <button class="btn btn-success" style="float: right;" onclick="sendUpdate()">Post</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+    </body>
+</html>

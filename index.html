@@ -1,0 +1,144 @@
+<html>
+    <head>
+        <title>
+            Kalam Academy
+        </title>
+        <link href="./bootstrap/css/bootstrap.min.css" rel="stylesheet">
+        <script src="./jquery/jquery.min.js";></script>
+
+
+      <script>
+
+            function login(){
+                var username = document.getElementById("username").value;
+                var password = document.getElementById("password").value;
+                $.post(
+                    "authentication.php",
+                    {username : username , password : password , operation : "login"},
+                    function (response){
+                        if(response == 2){
+                            var warn_password = document.getElementById('warn_password');
+                            warn_password.innerHTML="<b>password doesn't match</b>";
+                        }else if(response == 0){
+                            var warn_username = document.getElementById('warn_username');
+                            warn_username.innerHTML="<b>username not found</b>";
+                        }else{
+                            var warn_username = document.getElementById('warn_username');
+                            warn_username.innerHTML="";
+                            var warn_password = document.getElementById('warn_password');
+                            warn_password.innerHTML="";
+                            localStorage.setItem('username',username);
+                            window.location.href = "./home.html";
+                        }
+                    }
+                )
+            }
+
+
+
+            function alphanumeric(username)
+            { 
+            var all = /^[0-9a-zA-Z]+$/;
+            var letters = /^[a-zA-Z]+$/;
+            var numbers = /^[0-9]+$/;
+            if(username.match(all)){
+                
+                if(username.match(letters))
+                {
+                    return false;
+                }
+                else if(username.match(numbers))
+                {
+                    return false;
+                }
+                else{
+                    return true;
+                }
+            }
+            else
+            {
+                return false;
+            }
+            }
+
+
+          function validate(){
+            var username = document.getElementById('username').value;
+            if(username == ""){
+                var warn_username = document.getElementById('warn_username');
+                warn_username.innerHTML="<b>please enter a valid username</b>";
+            }
+            else{
+                if(alphanumeric(username)){
+                    var warn_username = document.getElementById('warn_username');
+                    warn_username.innerHTML="";
+                        var password = document.getElementById('password').value;
+                        if(password.length<6){
+                            var warn_password = document.getElementById('warn_password');
+                            warn_password.innerHTML="<b>password should be longer than 6 characters</b>";
+                        }else{
+                            if(alphanumeric(password)){
+                                var warn_password = document.getElementById('warn_password');
+                                warn_password.innerHTML="";
+                                // all cases satisfied
+                                $.post(
+                                    "Authentication.php",
+                                    {username : username, password : password, operation : "signup"},
+                                    function(response){
+                                        if(response == 0){
+                                            var warn_username = document.getElementById('warn_username');
+                                            warn_username.innerHTML="<b>username already exists</b>";
+                                        }else{
+                                            var warn_username = document.getElementById('warn_username');
+                                            warn_username.innerHTML="";
+                                            alert("Successfully Registered in as "+response);
+                                        }
+                                    }
+                                )
+                            }
+                            else{
+                                var warn_password = document.getElementById('warn_password');
+                                warn_password.innerHTML="<b>password should be contain both alphabets and numbers</b>";
+                            }
+                        }
+                }
+                else{
+                    var warn_username = document.getElementById('warn_username');
+                    warn_username.innerHTML="<b>username should be alphanumeric</b>";
+                }
+            }
+          }
+
+
+      </script>
+
+
+    </head>
+    <body>
+        <div class="container text-center mt-5">
+            <h1>LOGIN/SIGN UP</h1>
+            <form class="form-data mt-5"> 
+                <p>
+                    <label for="username">Username</label>
+                    <input id="username" class="username" placeholder="username" required=""><br>
+                    <span style="color: red; font-size: x-small;" id="warn_username"></span>
+                </p>
+                <p>
+                    <label for="password">Password</label>
+                    <input id="password" type="password" class="password" placeholder="password"><br>
+                    <span style="color: red; font-size: x-small;" id="warn_password"></span>
+                </p>
+            </form>
+                <p>
+            
+                    <button class="btn btn-success mr-5" onclick="login()">
+                            Login
+                    </button>
+                    <button class="btn btn-primary"  onclick="validate()">
+                        Sign Up
+                    </button>
+                </p>
+          
+        </div>
+    </body>
+</html>
